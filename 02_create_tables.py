@@ -14,7 +14,7 @@ os.environ["KAGGLE_KEY"] = "KGAT_70c55e92f3c00b76ceb98187faf5836c"
 import subprocess
 import os
 
-save_path = "/Workspace/Users/rutujamuthe024@gmail.com/kaggle_data"
+save_path = "/Workspace/Users/kavya@cloudaeon.net/kaggle_data"
 os.makedirs(save_path, exist_ok=True)
 
 # Cosmetics Dataset
@@ -70,32 +70,32 @@ spark_fashion = spark_fashion.toDF(
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC -- create catalog
-# MAGIC CREATE CATALOG IF NOT EXISTS retail_catalog;
+# %sql
+# -- create catalog
+# CREATE CATALOG IF NOT EXISTS retail_catalog;
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC -- List all catalogs
-# MAGIC SHOW CATALOGS;
+# %sql
+# -- List all catalogs
+# SHOW CATALOGS;
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC -- create schema
-# MAGIC CREATE SCHEMA IF NOT EXISTS retail_catalog.dynamic_markdown;
+# %sql
+# -- create schema
+# CREATE SCHEMA IF NOT EXISTS retail_catalog.dynamic_markdown;
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC -- List all schema
-# MAGIC SHOW SCHEMAS;
+# %sql
+# -- List all schema
+# SHOW SCHEMAS;
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC USE retail_catalog.dynamic_markdown;
+# %sql
+# USE retail_catalog.dynamic_markdown;
 
 # COMMAND ----------
 
@@ -103,12 +103,12 @@ spark_fashion = spark_fashion.toDF(
 spark_cosmetics.write \
 .mode("overwrite") \
 .format("delta") \
-.saveAsTable("retail_catalog.dynamic_markdown.cosmetics_raw")
+.saveAsTable("markdown.hackathon.cosmetics_raw")
 
 spark_fashion.write \
 .mode("overwrite") \
 .format("delta") \
-.saveAsTable("retail_catalog.dynamic_markdown.fashion_raw")
+.saveAsTable("markdown.hackathon.fashion_raw")
 
 # COMMAND ----------
 
@@ -124,19 +124,19 @@ display(spark_fashion)
 spark_cosmetics.write \
 .mode("overwrite") \
 .format("delta") \
-.saveAsTable("retail_catalog.dynamic_markdown.cosmetics_raw")
+.saveAsTable("markdown.hackathon.cosmetics_raw")
 
 spark_fashion.write \
 .mode("overwrite") \
 .format("delta") \
-.saveAsTable("retail_catalog.dynamic_markdown.fashion_raw")
+.saveAsTable("markdown.hackathon.fashion_raw")
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- verify raw tables
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC FROM markdown.hackathon.cosmetics_raw
 # MAGIC LIMIT 10;
 
 # COMMAND ----------
@@ -144,7 +144,7 @@ spark_fashion.write \
 # MAGIC %sql
 # MAGIC -- verify raw tables
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC FROM markdown.hackathon.fashion_raw
 # MAGIC LIMIT 10;
 
 # COMMAND ----------
@@ -158,21 +158,21 @@ print(spark_fashion.columns)
 # MAGIC %sql
 # MAGIC -- verify raw tables
 # MAGIC SELECT COUNT(*) 
-# MAGIC FROM retail_catalog.dynamic_markdown.cosmetics_raw;
+# MAGIC FROM markdown.hackathon.cosmetics_raw;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- verify raw tables
 # MAGIC SELECT COUNT(*) 
-# MAGIC FROM retail_catalog.dynamic_markdown.fashion_raw;
+# MAGIC FROM markdown.hackathon.fashion_raw;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- check sample data
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC FROM markdown.hackathon.cosmetics_raw
 # MAGIC LIMIT 5;
 
 # COMMAND ----------
@@ -180,7 +180,7 @@ print(spark_fashion.columns)
 # MAGIC %sql
 # MAGIC -- check sample data
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC FROM markdown.hackathon.fashion_raw
 # MAGIC LIMIT 5;
 
 # COMMAND ----------
@@ -197,7 +197,7 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC -- DDL for category dim table
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_category (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_category (
 # MAGIC     category_key BIGINT,
 # MAGIC     category_name STRING,
 # MAGIC     parent_category STRING,
@@ -208,7 +208,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_category
+# MAGIC INSERT INTO markdown.hackathon.dim_category
 # MAGIC SELECT DISTINCT
 # MAGIC     monotonically_increasing_id() AS category_key,
 # MAGIC     category AS category_name,
@@ -216,23 +216,23 @@ print(spark_fashion.columns)
 # MAGIC     NULL AS sub_category
 # MAGIC FROM (
 # MAGIC     SELECT category
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT category
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC );
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_category;
+# MAGIC FROM markdown.hackathon.dim_category;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_category;
+# MAGIC FROM markdown.hackathon.dim_category;
 
 # COMMAND ----------
 
@@ -242,7 +242,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_brand (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_brand (
 # MAGIC     brand_key BIGINT,
 # MAGIC     brand_name STRING,
 # MAGIC     brand_type STRING,
@@ -253,7 +253,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_brand
+# MAGIC INSERT INTO markdown.hackathon.dim_brand
 # MAGIC SELECT DISTINCT
 # MAGIC     monotonically_increasing_id() AS brand_key,
 # MAGIC     brand AS brand_name,
@@ -261,23 +261,23 @@ print(spark_fashion.columns)
 # MAGIC     NULL AS country
 # MAGIC FROM (
 # MAGIC     SELECT brand
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT brand
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC );
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_brand;
+# MAGIC FROM markdown.hackathon.dim_brand;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_brand;
+# MAGIC FROM markdown.hackathon.dim_brand;
 
 # COMMAND ----------
 
@@ -287,7 +287,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_season (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_season (
 # MAGIC     season_key BIGINT,
 # MAGIC     season_name STRING,
 # MAGIC     start_month INT,
@@ -298,7 +298,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_season
+# MAGIC INSERT INTO markdown.hackathon.dim_season
 # MAGIC SELECT DISTINCT
 # MAGIC     monotonically_increasing_id() AS season_key,
 # MAGIC     season AS season_name,
@@ -318,23 +318,23 @@ print(spark_fashion.columns)
 # MAGIC     END AS end_month
 # MAGIC FROM (
 # MAGIC     SELECT season
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT season
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC );
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_season;
+# MAGIC FROM markdown.hackathon.dim_season;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_season;
+# MAGIC FROM markdown.hackathon.dim_season;
 
 # COMMAND ----------
 
@@ -344,7 +344,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_markdown (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_markdown (
 # MAGIC     markdown_key BIGINT,
 # MAGIC     markdown_percentage DECIMAL(10,2),
 # MAGIC     markdown_type STRING,
@@ -356,7 +356,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_markdown
+# MAGIC INSERT INTO markdown.hackathon.dim_markdown
 # MAGIC SELECT DISTINCT
 # MAGIC     monotonically_increasing_id() AS markdown_key,
 # MAGIC     markdown_percentage,
@@ -373,32 +373,32 @@ print(spark_fashion.columns)
 # MAGIC     END AS markdown_strategy
 # MAGIC FROM (
 # MAGIC     SELECT markdown_1 AS markdown_percentage
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT markdown_2
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT markdown_3
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT markdown_4
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT markdown_percentage
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC );
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_markdown;
+# MAGIC FROM markdown.hackathon.dim_markdown;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_markdown;
+# MAGIC FROM markdown.hackathon.dim_markdown;
 
 # COMMAND ----------
 
@@ -408,7 +408,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_price_range (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_price_range (
 # MAGIC     price_range_key BIGINT,
 # MAGIC     min_price DECIMAL(10,2),
 # MAGIC     max_price DECIMAL(10,2),
@@ -419,7 +419,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_price_range
+# MAGIC INSERT INTO markdown.hackathon.dim_price_range
 # MAGIC VALUES
 # MAGIC (1, 0.00, 500.00, 'Budget'),
 # MAGIC (2, 501.00, 2000.00, 'Mid Range'),
@@ -429,13 +429,13 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_price_range;
+# MAGIC FROM markdown.hackathon.dim_price_range;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_price_range;
+# MAGIC FROM markdown.hackathon.dim_price_range;
 
 # COMMAND ----------
 
@@ -445,7 +445,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_stock_level (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_stock_level (
 # MAGIC     stock_level_key BIGINT,
 # MAGIC     stock_status STRING,
 # MAGIC     stock_bucket STRING,
@@ -456,7 +456,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_stock_level
+# MAGIC INSERT INTO markdown.hackathon.dim_stock_level
 # MAGIC VALUES
 # MAGIC (1, 'Low Stock', '0-50', 'Yes'),
 # MAGIC (2, 'Medium Stock', '51-200', 'No'),
@@ -466,13 +466,13 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_stock_level;
+# MAGIC FROM markdown.hackathon.dim_stock_level;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_stock_level;
+# MAGIC FROM markdown.hackathon.dim_stock_level;
 
 # COMMAND ----------
 
@@ -482,7 +482,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_customer_rating (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_customer_rating (
 # MAGIC     customer_rating_key BIGINT,
 # MAGIC     customer_rating DECIMAL(3,2),
 # MAGIC     rating_category STRING
@@ -492,7 +492,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_customer_rating
+# MAGIC INSERT INTO markdown.hackathon.dim_customer_rating
 # MAGIC SELECT DISTINCT
 # MAGIC     monotonically_increasing_id() AS customer_rating_key,
 # MAGIC     customer_rating,
@@ -504,10 +504,10 @@ print(spark_fashion.columns)
 # MAGIC     END AS rating_category
 # MAGIC FROM (
 # MAGIC     SELECT customer_ratings AS customer_rating
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC     UNION
 # MAGIC     SELECT customer_rating
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC )
 # MAGIC WHERE customer_rating IS NOT NULL;
 
@@ -515,13 +515,13 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_customer_rating;
+# MAGIC FROM markdown.hackathon.dim_customer_rating;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_customer_rating;
+# MAGIC FROM markdown.hackathon.dim_customer_rating;
 
 # COMMAND ----------
 
@@ -531,7 +531,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_promotion (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_promotion (
 # MAGIC     promotion_key BIGINT,
 # MAGIC     promotion_name STRING,
 # MAGIC     promotion_type STRING,
@@ -544,7 +544,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_promotion
+# MAGIC INSERT INTO markdown.hackathon.dim_promotion
 # MAGIC SELECT DISTINCT
 # MAGIC     monotonically_increasing_id() AS promotion_key,
 # MAGIC     promotion_type AS promotion_name,
@@ -557,20 +557,20 @@ print(spark_fashion.columns)
 # MAGIC     END AS discount_type,
 # MAGIC     NULL AS start_date,
 # MAGIC     NULL AS end_date
-# MAGIC FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC FROM markdown.hackathon.cosmetics_raw
 # MAGIC WHERE promotion_type IS NOT NULL;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_promotion;
+# MAGIC FROM markdown.hackathon.dim_promotion;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_promotion;
+# MAGIC FROM markdown.hackathon.dim_promotion;
 
 # COMMAND ----------
 
@@ -580,7 +580,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_store (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_store (
 # MAGIC     store_key BIGINT,
 # MAGIC     store_name STRING,
 # MAGIC     store_type STRING,
@@ -593,7 +593,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_store
+# MAGIC INSERT INTO markdown.hackathon.dim_store
 # MAGIC VALUES
 # MAGIC (1, 'Online Store', 'E-Commerce', 'Pune', 'Maharashtra', 'India'),
 # MAGIC (2, 'Fashion Retail Store', 'Retail', 'Mumbai', 'Maharashtra', 'India'),
@@ -603,13 +603,13 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_store;
+# MAGIC FROM markdown.hackathon.dim_store;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_store;
+# MAGIC FROM markdown.hackathon.dim_store;
 
 # COMMAND ----------
 
@@ -619,7 +619,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_channel (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_channel (
 # MAGIC     channel_key BIGINT,
 # MAGIC     channel_name STRING,
 # MAGIC     channel_type STRING,
@@ -630,7 +630,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_channel
+# MAGIC INSERT INTO markdown.hackathon.dim_channel
 # MAGIC VALUES
 # MAGIC (1, 'Website', 'Online', 'Web'),
 # MAGIC (2, 'Mobile App', 'Digital', 'Android/iOS'),
@@ -640,13 +640,13 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_channel;
+# MAGIC FROM markdown.hackathon.dim_channel;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_channel;
+# MAGIC FROM markdown.hackathon.dim_channel;
 
 # COMMAND ----------
 
@@ -656,7 +656,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_date (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_date (
 # MAGIC     date_key BIGINT,
 # MAGIC     full_date DATE,
 # MAGIC     day INT,
@@ -673,7 +673,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_date
+# MAGIC INSERT INTO markdown.hackathon.dim_date
 # MAGIC SELECT
 # MAGIC     CAST(date_format(dt, 'yyyyMMdd') AS BIGINT) AS date_key,
 # MAGIC     dt AS full_date,
@@ -702,14 +702,14 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_date
+# MAGIC FROM markdown.hackathon.dim_date
 # MAGIC LIMIT 10;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_date;
+# MAGIC FROM markdown.hackathon.dim_date;
 
 # COMMAND ----------
 
@@ -719,7 +719,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.dim_customer (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.dim_customer (
 # MAGIC     customer_key BIGINT,
 # MAGIC     customer_id STRING,
 # MAGIC     customer_name STRING,
@@ -734,7 +734,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.dim_customer
+# MAGIC INSERT INTO markdown.hackathon.dim_customer
 # MAGIC VALUES
 # MAGIC (1, 'CUST001', 'Aarav Sharma', 'Male', '18-25', 'Pune', 'Maharashtra', 'India'),
 # MAGIC (2, 'CUST002', 'Priya Verma', 'Female', '26-35', 'Mumbai', 'Maharashtra', 'India'),
@@ -746,13 +746,13 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_customer;
+# MAGIC FROM markdown.hackathon.dim_customer;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.dim_customer;
+# MAGIC FROM markdown.hackathon.dim_customer;
 
 # COMMAND ----------
 
@@ -767,7 +767,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.fact_sales (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.fact_sales (
 # MAGIC     sales_key BIGINT,
 # MAGIC     product_key BIGINT,
 # MAGIC     category_key BIGINT,
@@ -796,7 +796,7 @@ print(spark_fashion.columns)
 
 # DBTITLE 1,Cell 87
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.fact_sales
+# MAGIC INSERT INTO markdown.hackathon.fact_sales
 # MAGIC
 # MAGIC SELECT
 # MAGIC     monotonically_increasing_id() AS sales_key,
@@ -839,7 +839,7 @@ print(spark_fashion.columns)
 # MAGIC         optimal_discount,
 # MAGIC         stock_level,
 # MAGIC         customer_ratings
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC
 # MAGIC     UNION ALL
 # MAGIC
@@ -856,28 +856,28 @@ print(spark_fashion.columns)
 # MAGIC         markdown_percentage AS optimal_discount,
 # MAGIC         stock_quantity AS stock_level,
 # MAGIC         customer_rating AS customer_ratings
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC ) src
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_category dc
+# MAGIC LEFT JOIN markdown.hackathon.dim_category dc
 # MAGIC ON src.category = dc.category_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_brand db
+# MAGIC LEFT JOIN markdown.hackathon.dim_brand db
 # MAGIC ON src.brand = db.brand_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_season ds
+# MAGIC LEFT JOIN markdown.hackathon.dim_season ds
 # MAGIC ON src.season = ds.season_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_customer_rating dcr
+# MAGIC LEFT JOIN markdown.hackathon.dim_customer_rating dcr
 # MAGIC ON src.customer_ratings = dcr.customer_rating
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_markdown dm
+# MAGIC LEFT JOIN markdown.hackathon.dim_markdown dm
 # MAGIC ON src.markdown_percentage = dm.markdown_percentage
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_price_range dpr
+# MAGIC LEFT JOIN markdown.hackathon.dim_price_range dpr
 # MAGIC ON src.original_price BETWEEN dpr.min_price AND dpr.max_price
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_stock_level dsl
+# MAGIC LEFT JOIN markdown.hackathon.dim_stock_level dsl
 # MAGIC ON (
 # MAGIC     CASE
 # MAGIC         WHEN src.stock_level <= 50 THEN 'Low Stock'
@@ -890,14 +890,14 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_sales
+# MAGIC FROM markdown.hackathon.fact_sales
 # MAGIC LIMIT 20;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_sales;
+# MAGIC FROM markdown.hackathon.fact_sales;
 
 # COMMAND ----------
 
@@ -907,7 +907,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.fact_inventory (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.fact_inventory (
 # MAGIC     inventory_key BIGINT,
 # MAGIC     product_key BIGINT,
 # MAGIC     category_key BIGINT,
@@ -928,7 +928,7 @@ print(spark_fashion.columns)
 
 # DBTITLE 1,Cell 92
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.fact_inventory
+# MAGIC INSERT INTO markdown.hackathon.fact_inventory
 # MAGIC
 # MAGIC SELECT
 # MAGIC
@@ -972,7 +972,7 @@ print(spark_fashion.columns)
 # MAGIC         season,
 # MAGIC         stock_level AS stock_quantity,
 # MAGIC         original_price
-# MAGIC     FROM retail_catalog.dynamic_markdown.cosmetics_raw
+# MAGIC     FROM markdown.hackathon.cosmetics_raw
 # MAGIC
 # MAGIC     UNION ALL
 # MAGIC
@@ -983,19 +983,19 @@ print(spark_fashion.columns)
 # MAGIC         season,
 # MAGIC         stock_quantity,
 # MAGIC         original_price
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC ) src
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_category dc
+# MAGIC LEFT JOIN markdown.hackathon.dim_category dc
 # MAGIC ON src.category = dc.category_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_brand db
+# MAGIC LEFT JOIN markdown.hackathon.dim_brand db
 # MAGIC ON src.brand = db.brand_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_season ds
+# MAGIC LEFT JOIN markdown.hackathon.dim_season ds
 # MAGIC ON src.season = ds.season_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_stock_level dsl
+# MAGIC LEFT JOIN markdown.hackathon.dim_stock_level dsl
 # MAGIC ON (
 # MAGIC     CASE
 # MAGIC         WHEN src.stock_quantity <= 50 THEN 'Low Stock'
@@ -1008,14 +1008,14 @@ print(spark_fashion.columns)
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_inventory
+# MAGIC FROM markdown.hackathon.fact_inventory
 # MAGIC LIMIT 20;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_inventory;
+# MAGIC FROM markdown.hackathon.fact_inventory;
 
 # COMMAND ----------
 
@@ -1025,7 +1025,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.fact_markdown_analytics (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.fact_markdown_analytics (
 # MAGIC     markdown_fact_key BIGINT,
 # MAGIC     product_key BIGINT,
 # MAGIC     category_key BIGINT,
@@ -1057,12 +1057,12 @@ print(spark_fashion.columns)
 
 # DBTITLE 1,Cell 97
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.fact_markdown_analytics
+# MAGIC INSERT INTO markdown.hackathon.fact_markdown_analytics
 # MAGIC
 # MAGIC SELECT
 # MAGIC
-# MAGIC     monotonically_increasing_id() AS markdown_fact_key,
-# MAGIC
+# MAGIC     ROW_NUMBER() OVER (ORDER BY src.category) AS markdown_fact_key,
+# MAGIC     
 # MAGIC     NULL AS product_key,
 # MAGIC     dc.category_key,
 # MAGIC     db.brand_key,
@@ -1103,24 +1103,24 @@ print(spark_fashion.columns)
 # MAGIC     END AS markdown_effectiveness,
 # MAGIC
 # MAGIC     current_timestamp()
-# MAGIC FROM retail_catalog.dynamic_markdown.cosmetics_raw src
+# MAGIC FROM markdown.hackathon.cosmetics_raw src
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_category dc
+# MAGIC LEFT JOIN markdown.hackathon.dim_category dc
 # MAGIC ON src.category = dc.category_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_brand db
+# MAGIC LEFT JOIN markdown.hackathon.dim_brand db
 # MAGIC ON src.brand = db.brand_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_season ds
+# MAGIC LEFT JOIN markdown.hackathon.dim_season ds
 # MAGIC ON src.season = ds.season_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_markdown dm
+# MAGIC LEFT JOIN markdown.hackathon.dim_markdown dm
 # MAGIC ON src.markdown_1 = dm.markdown_percentage
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_promotion dpr
+# MAGIC LEFT JOIN markdown.hackathon.dim_promotion dpr
 # MAGIC ON src.promotion_type = dpr.promotion_type
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_stock_level dsl
+# MAGIC LEFT JOIN markdown.hackathon.dim_stock_level dsl
 # MAGIC ON (
 # MAGIC     CASE
 # MAGIC         WHEN src.stock_level <= 50 THEN 'Low Stock'
@@ -1128,21 +1128,21 @@ print(spark_fashion.columns)
 # MAGIC         ELSE 'Overstock'
 # MAGIC     END
 # MAGIC ) = dsl.stock_status
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_customer_rating dcr
+# MAGIC LEFT JOIN markdown.hackathon.dim_customer_rating dcr
 # MAGIC ON src.customer_ratings = dcr.customer_rating;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_markdown_analytics
+# MAGIC FROM markdown.hackathon.fact_markdown_analytics
 # MAGIC LIMIT 20;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_markdown_analytics;
+# MAGIC FROM markdown.hackathon.fact_markdown_analytics;
 
 # COMMAND ----------
 
@@ -1152,7 +1152,7 @@ print(spark_fashion.columns)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS retail_catalog.dynamic_markdown.fact_customer_feedback (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.fact_customer_feedback (
 # MAGIC     feedback_key BIGINT,
 # MAGIC     product_key BIGINT,
 # MAGIC     category_key BIGINT,
@@ -1172,7 +1172,7 @@ print(spark_fashion.columns)
 
 # DBTITLE 1,Cell 102
 # MAGIC %sql
-# MAGIC INSERT INTO retail_catalog.dynamic_markdown.fact_customer_feedback
+# MAGIC INSERT INTO markdown.hackathon.fact_customer_feedback
 # MAGIC SELECT
 # MAGIC     monotonically_increasing_id() AS feedback_key,
 # MAGIC     NULL AS product_key,
@@ -1199,33 +1199,33 @@ print(spark_fashion.columns)
 # MAGIC         is_returned,
 # MAGIC         return_reason,
 # MAGIC         markdown_percentage
-# MAGIC     FROM retail_catalog.dynamic_markdown.fashion_raw
+# MAGIC     FROM markdown.hackathon.fashion_raw
 # MAGIC ) src
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_category dc
+# MAGIC LEFT JOIN markdown.hackathon.dim_category dc
 # MAGIC ON src.category = dc.category_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_brand db
+# MAGIC LEFT JOIN markdown.hackathon.dim_brand db
 # MAGIC ON src.brand = db.brand_name
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_customer_rating dcr
+# MAGIC LEFT JOIN markdown.hackathon.dim_customer_rating dcr
 # MAGIC ON src.customer_rating = dcr.customer_rating
 # MAGIC
-# MAGIC LEFT JOIN retail_catalog.dynamic_markdown.dim_markdown dm
+# MAGIC LEFT JOIN markdown.hackathon.dim_markdown dm
 # MAGIC ON src.markdown_percentage = dm.markdown_percentage;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT *
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_customer_feedback
+# MAGIC FROM markdown.hackathon.fact_customer_feedback
 # MAGIC LIMIT 20;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC SELECT COUNT(*)
-# MAGIC FROM retail_catalog.dynamic_markdown.fact_customer_feedback;
+# MAGIC FROM markdown.hackathon.fact_customer_feedback;
 
 # COMMAND ----------
 
@@ -1651,8 +1651,3 @@ print(spark_fashion.columns)
 # SELECT * FROM dim_brand;
 # SELECT * FROM fact_sales;
 # SELECT * FROM fact_markdown_analytics;
-
-# COMMAND ----------
-
-
-

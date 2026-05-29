@@ -1,27 +1,27 @@
 # Databricks notebook source
-# MAGIC %sql
-# MAGIC CREATE CATALOG IF NOT EXISTS markdown;
-# MAGIC USE CATALOG markdown 
+# %sql
+# CREATE CATALOG IF NOT EXISTS markdown;
+# USE CATALOG markdown 
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE SCHEMA IF NOT EXISTS hackathon;
-# MAGIC USE SCHEMA hackathon
+# %sql
+# CREATE SCHEMA IF NOT EXISTS hackathon;
+# USE SCHEMA hackathon
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE VOLUME IF NOT EXISTS raw_data;
+# %sql
+# CREATE VOLUME IF NOT EXISTS raw_data;
 
 # COMMAND ----------
 
-df = spark.read.format("csv") \
-    .option("header", "true") \
-    .option("inferSchema", "true") \
-    .load("/Volumes/markdown/hackathon/raw_data/SYNTHETIC Markdown Dataset.csv")
+# df = spark.read.format("csv") \
+#     .option("header", "true") \
+#     .option("inferSchema", "true") \
+#     .load("/Volumes/markdown/hackathon/raw_data/SYNTHETIC Markdown Dataset.csv")
 
-df.display()
+# df.display()
 
 # COMMAND ----------
 
@@ -104,24 +104,6 @@ df.display()
 # MAGIC     discount_pct
 # MAGIC FROM markdown.hackathon.markdown_rules
 # MAGIC ORDER BY rule_id, condition_min;
-
-# COMMAND ----------
-
-# DBTITLE 1,Cell 10
-# MAGIC %sql
-# MAGIC # Load Bronze data
-# MAGIC bronze = spark.table("markdown.hackathon.bronze_sales")
-# MAGIC
-# MAGIC # Apply all rules
-# MAGIC result, fired = apply_rules_dynamically(bronze)
-# MAGIC
-# MAGIC # Check output
-# MAGIC display(result.select(
-# MAGIC     "Product_ID", "Category",
-# MAGIC     "Original_Price", "recommended_price",
-# MAGIC     "discount_pct_applied", "markdown_reason",
-# MAGIC     *fired
-# MAGIC ).limit(20))
 
 # COMMAND ----------
 
@@ -291,173 +273,9 @@ def apply_rules_dynamically(
 
 # COMMAND ----------
 
-from pyspark.sql.functions import (
-    col, when, least, greatest,
-    round as spark_round, expr, lit
-)
-
-def apply_rules_dynamically(
-    input_df,
-    catalog     = "markdown_pricing_catalog",
-    rules_table = "silver.markdown_rules",
-    rule_names  = None   # None = all rules; or ['EXPIRY','SEASONAL']
-):
-
-    # ── Step 1: Build F-string SQL query (as senior described) ─────────────
-    rule_filter = ""
-    if rule_names:
-        names_str   = ", ".join([f"'{r}'" for r in rule_names])
-        rule_filter = f"WHERE rule_name IN ({names_str})"
-
-    # Triple-quoted F-string — exactly what senior said at 3:09
-    rules_query = f"""
-        SELECT
-            rule_id,
-            rule_name,
-            trigger_column,
-            condition_operator,
-            condition_min,
-            condition_max,
-            condition_str_value,
-            price_multiplier,
-            discount_pct
-        FROM {catalog}.{rules_table}
-        {rule_filter}
-        ORDER BY rule_id, condition_min
-    """
-
-    # collect() — senior mentioned this at 0:59
-    rules = spark.sql(rules_query).collect()
-    print(f"Loaded {len(rules)} rule conditions from {catalog}.{rules_table}")
-
-    df = input_df
-
-    # ── Step 2: Compute derived signals ───────────────────────────────────
-    df = df \
-        .withColumn("sell_through_rate",
-            spark_round(
-                col("Units_Sold") / expr("NULLIF(Stock_Level, 0)") * 100, 2)) \
-        .withColumn("competitor_gap_pct",
-            spark_round(
-                (col("Original_Price") - col("Competitor_Price"))
-                / expr("NULLIF(Original_Price, 0)") * 100, 2)) \
-        .withColumn("days_in_stock",
-            col("Days_In_Stock").cast("double"))
-
-    # ── Step 3: Group rules and build WHEN chains dynamically ──────────────
-    groups = {}
-    for r in rules:
-        groups.setdefault(r["rule_name"], []).append(r)
-
-    rule_price_cols = []
-
-    for rule_name, conditions in groups.items():
-
-        col_name = f"price_{rule_name.lower()}"
-        rule_price_cols.append(col_name)
-        chain    = None
-
-        for c in conditions:
-            trig = c["trigger_column"]
-            op   = c["condition_operator"]
-            mult = float(c["price_multiplier"])
-            cmin = c["condition_min"]
-            cmax = c["condition_max"]
-            cstr = c["condition_str_value"]
-
-            # Build condition from operator — CASE/IF from table (senior 7:03)
-            if   op == "BETWEEN":
-                cond = col(trig).between(float(cmin), float(cmax))
-            elif op == ">":
-                cond = col(trig) > float(cmin)
-            elif op == "<":
-                cond = col(trig) < float(cmax)
-            elif op == ">=":
-                cond = col(trig) >= float(cmin)
-            elif op == "<=":
-                cond = col(trig) <= float(cmax)
-            elif op == "=":
-                cond = col(trig) == cstr
-            else:
-                continue
-
-            result = col("Original_Price") * lit(mult)
-
-            chain  = when(cond, result) \
-                     if chain is None   \
-                     else chain.when(cond, result)
-
-        if chain is not None:
-            df = df.withColumn(
-                col_name,
-                chain.otherwise(col("Original_Price"))
-            )
-
-    # ── Step 4: Conflict resolution — lowest price wins ───────────────────
-    if rule_price_cols:
-        df = df.withColumn(
-            "raw_recommended_price",
-            least(*[col(c) for c in rule_price_cols])
-        )
-    else:
-        df = df.withColumn(
-            "raw_recommended_price",
-            col("Original_Price")
-        )
-
-    # ── Step 5: Simple floor price — unit_cost × 1.05 ─────────────────────
-    # floor_multiplier removed from schema so hardcoded here
-    df = df.withColumn(
-        "floor_price",
-        col("unit_cost") * lit(1.05)
-    )
-
-    # ── Step 6: Apply floor guardrail ─────────────────────────────────────
-    df = df.withColumn(
-        "recommended_price",
-        greatest(col("raw_recommended_price"), col("floor_price"))
-    )
-
-    # ── Step 7: Which rule fired? ─────────────────────────────────────────
-    reason_chain = None
-    for c in rule_price_cols:
-        label = c.replace("price_", "").upper()
-        cond  = col(c) == col("raw_recommended_price")
-        reason_chain = when(cond, lit(label)) \
-                       if reason_chain is None  \
-                       else reason_chain.when(cond, lit(label))
-
-    df = df.withColumn(
-        "markdown_reason",
-        reason_chain.otherwise(lit("FLOOR_GUARDRAIL"))
-        if reason_chain else lit("NO_RULE")
-    )
-
-    # ── Step 8: Final KPI columns ─────────────────────────────────────────
-    df = df \
-        .withColumn("discount_pct_applied",
-            spark_round(
-                (col("Original_Price") - col("recommended_price"))
-                / expr("NULLIF(Original_Price, 0)") * 100, 1)) \
-        .withColumn("gross_amount",
-            spark_round(col("Original_Price") * col("Units_Sold"), 2)) \
-        .withColumn("net_amount",
-            spark_round(col("recommended_price") * col("Units_Sold"), 2)) \
-        .withColumn("discount_amount",
-            spark_round(col("gross_amount") - col("net_amount"), 2))
-
-    return df, rule_price_cols
-
-# COMMAND ----------
-
 # DBTITLE 1,Cell 10
-# Load Bronze data
 bronze = spark.table("markdown.hackathon.bronze_sales")
-
-# Apply all rules
 result, fired = apply_rules_dynamically(bronze)
-
-# Check output
 display(result.select(
     "Product_ID", "Category",
     "Original_Price", "recommended_price",
@@ -465,10 +283,190 @@ display(result.select(
     *fired
 ).limit(20))
 
+result.write.mode("overwrite").saveAsTable(
+    "markdown.hackathon.pricing_output"
+)
+
+# COMMAND ----------
+
+# from pyspark.sql.functions import (
+#     col, when, least, greatest,
+#     round as spark_round, expr, lit
+# )
+
+# def apply_rules_dynamically(
+#     input_df,
+#     catalog     = "markdown_pricing_catalog",
+#     rules_table = "silver.markdown_rules",
+#     rule_names  = None   # None = all rules; or ['EXPIRY','SEASONAL']
+# ):
+
+#     # ── Step 1: Build F-string SQL query (as senior described) ─────────────
+#     rule_filter = ""
+#     if rule_names:
+#         names_str   = ", ".join([f"'{r}'" for r in rule_names])
+#         rule_filter = f"WHERE rule_name IN ({names_str})"
+
+#     # Triple-quoted F-string — exactly what senior said at 3:09
+#     rules_query = f"""
+#         SELECT
+#             rule_id,
+#             rule_name,
+#             trigger_column,
+#             condition_operator,
+#             condition_min,
+#             condition_max,
+#             condition_str_value,
+#             price_multiplier,
+#             discount_pct
+#         FROM {catalog}.{rules_table}
+#         {rule_filter}
+#         ORDER BY rule_id, condition_min
+#     """
+
+#     # collect() — senior mentioned this at 0:59
+#     rules = spark.sql(rules_query).collect()
+#     print(f"Loaded {len(rules)} rule conditions from {catalog}.{rules_table}")
+
+#     df = input_df
+
+#     # ── Step 2: Compute derived signals ───────────────────────────────────
+#     df = df \
+#         .withColumn("sell_through_rate",
+#             spark_round(
+#                 col("Units_Sold") / expr("NULLIF(Stock_Level, 0)") * 100, 2)) \
+#         .withColumn("competitor_gap_pct",
+#             spark_round(
+#                 (col("Original_Price") - col("Competitor_Price"))
+#                 / expr("NULLIF(Original_Price, 0)") * 100, 2)) \
+#         .withColumn("days_in_stock",
+#             col("Days_In_Stock").cast("double"))
+
+#     # ── Step 3: Group rules and build WHEN chains dynamically ──────────────
+#     groups = {}
+#     for r in rules:
+#         groups.setdefault(r["rule_name"], []).append(r)
+
+#     rule_price_cols = []
+
+#     for rule_name, conditions in groups.items():
+
+#         col_name = f"price_{rule_name.lower()}"
+#         rule_price_cols.append(col_name)
+#         chain    = None
+
+#         for c in conditions:
+#             trig = c["trigger_column"]
+#             op   = c["condition_operator"]
+#             mult = float(c["price_multiplier"])
+#             cmin = c["condition_min"]
+#             cmax = c["condition_max"]
+#             cstr = c["condition_str_value"]
+
+#             # Build condition from operator — CASE/IF from table (senior 7:03)
+#             if   op == "BETWEEN":
+#                 cond = col(trig).between(float(cmin), float(cmax))
+#             elif op == ">":
+#                 cond = col(trig) > float(cmin)
+#             elif op == "<":
+#                 cond = col(trig) < float(cmax)
+#             elif op == ">=":
+#                 cond = col(trig) >= float(cmin)
+#             elif op == "<=":
+#                 cond = col(trig) <= float(cmax)
+#             elif op == "=":
+#                 cond = col(trig) == cstr
+#             else:
+#                 continue
+
+#             result = col("Original_Price") * lit(mult)
+
+#             chain  = when(cond, result) \
+#                      if chain is None   \
+#                      else chain.when(cond, result)
+
+#         if chain is not None:
+#             df = df.withColumn(
+#                 col_name,
+#                 chain.otherwise(col("Original_Price"))
+#             )
+
+#     # ── Step 4: Conflict resolution — lowest price wins ───────────────────
+#     if rule_price_cols:
+#         df = df.withColumn(
+#             "raw_recommended_price",
+#             least(*[col(c) for c in rule_price_cols])
+#         )
+#     else:
+#         df = df.withColumn(
+#             "raw_recommended_price",
+#             col("Original_Price")
+#         )
+
+#     # ── Step 5: Simple floor price — unit_cost × 1.05 ─────────────────────
+#     # floor_multiplier removed from schema so hardcoded here
+#     df = df.withColumn(
+#         "floor_price",
+#         col("unit_cost") * lit(1.05)
+#     )
+
+#     # ── Step 6: Apply floor guardrail ─────────────────────────────────────
+#     df = df.withColumn(
+#         "recommended_price",
+#         greatest(col("raw_recommended_price"), col("floor_price"))
+#     )
+
+#     # ── Step 7: Which rule fired? ─────────────────────────────────────────
+#     reason_chain = None
+#     for c in rule_price_cols:
+#         label = c.replace("price_", "").upper()
+#         cond  = col(c) == col("raw_recommended_price")
+#         reason_chain = when(cond, lit(label)) \
+#                        if reason_chain is None  \
+#                        else reason_chain.when(cond, lit(label))
+
+#     df = df.withColumn(
+#         "markdown_reason",
+#         reason_chain.otherwise(lit("FLOOR_GUARDRAIL"))
+#         if reason_chain else lit("NO_RULE")
+#     )
+
+#     # ── Step 8: Final KPI columns ─────────────────────────────────────────
+#     df = df \
+#         .withColumn("discount_pct_applied",
+#             spark_round(
+#                 (col("Original_Price") - col("recommended_price"))
+#                 / expr("NULLIF(Original_Price, 0)") * 100, 1)) \
+#         .withColumn("gross_amount",
+#             spark_round(col("Original_Price") * col("Units_Sold"), 2)) \
+#         .withColumn("net_amount",
+#             spark_round(col("recommended_price") * col("Units_Sold"), 2)) \
+#         .withColumn("discount_amount",
+#             spark_round(col("gross_amount") - col("net_amount"), 2))
+
+#     return df, rule_price_cols
+
+# COMMAND ----------
+
+# DBTITLE 1,Cell 10
+# # Load Bronze data
+# bronze = spark.table("markdown.hackathon.bronze_sales")
+
+# # Apply all rules
+# result, fired = apply_rules_dynamically(bronze)
+
+# # Check output
+# display(result.select(
+#     "Product_ID", "Category",
+#     "Original_Price", "recommended_price",
+#     "discount_pct_applied", "markdown_reason",
+#     *fired
+# ).limit(20))
+
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE markdown.hackathon.product_trends (
+# MAGIC CREATE TABLE IF NOT EXISTS markdown.hackathon.product_trends (
 # MAGIC   trend_id INT,
 # MAGIC   product_id STRING,
 # MAGIC   trend_type STRING,
@@ -476,7 +474,8 @@ display(result.select(
 # MAGIC   trend_direction STRING,
 # MAGIC   trend_source STRING,
 # MAGIC   trend_date DATE
-# MAGIC );
+# MAGIC )
+# MAGIC USING DELTA
 
 # COMMAND ----------
 
